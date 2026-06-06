@@ -615,7 +615,7 @@ async function downloadCustomBun(
 		// Extract zip file
 		if (platformOS === "win") {
 			execSync(
-				`powershell -command "Expand-Archive -Path '${tempZipPath}' -DestinationPath '${overrideDir}' -Force"`,
+				`pwsh -command "Expand-Archive -Path '${tempZipPath}' -DestinationPath '${overrideDir}' -Force"`,
 				{ stdio: "inherit" },
 			);
 		} else {
@@ -744,7 +744,7 @@ async function downloadBunnyBun(
 		console.log(`Download completed (${Math.round(downloadedSize / 1024 / 1024)}MB), extracting...`);
 
 		if (platformOS === "win") {
-			execSync(`powershell -command "Expand-Archive -Path '${tempZipPath}' -DestinationPath '${overrideDir}' -Force"`, { stdio: "inherit" });
+			execSync(`pwsh -command "Expand-Archive -Path '${tempZipPath}' -DestinationPath '${overrideDir}' -Force"`, { stdio: "inherit" });
 		} else {
 			execSync(`unzip -o ${escapePathForTerminal(tempZipPath)} -d ${escapePathForTerminal(overrideDir)}`, { stdio: "inherit" });
 		}
@@ -2553,7 +2553,7 @@ usageDescriptions : ""}${urlTypes ? "\n" + urlTypes : ""}${documentTypes ?
 			// This bypasses Bun's PATHEXT behavior that treats launcher and launcher.exe as the same
 			try {
 				execSync(
-					`powershell -Command "if (Test-Path '${launcherWithoutExt}') { Rename-Item -Path '${launcherWithoutExt}' -NewName 'launcher.exe' -Force }"`,
+					`pwsh -Command "if (Test-Path '${launcherWithoutExt}') { Rename-Item -Path '${launcherWithoutExt}' -NewName 'launcher.exe' -Force }"`,
 					{ stdio: "pipe" },
 				);
 				console.log(`Ensured launcher has .exe extension on Windows`);
@@ -4982,7 +4982,7 @@ usageDescriptions : ""}${urlTypes ? "\n" + urlTypes : ""}${documentTypes ?
 		try {
 			// Create zip archive (Windows only)
 			execSync(
-				`powershell -command "Compress-Archive -Path '${stagingDir}\\\\*' -DestinationPath '${zipPath}' -Force"`,
+				`pwsh -command "Compress-Archive -Path '${stagingDir}\\\\*' -DestinationPath '${zipPath}' -Force"`,
 				{ stdio: "inherit" },
 			);
 

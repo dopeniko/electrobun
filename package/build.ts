@@ -99,7 +99,7 @@ let lastGitHubDownload = 0;
 async function pauseForGitHub(): Promise<void> {
 	const now = Date.now();
 	const timeSinceLastDownload = now - lastGitHubDownload;
-	const pauseDuration = 60000; // 60 seconds
+	const pauseDuration = 5000; // 60 seconds
 
 	if (lastGitHubDownload > 0 && timeSinceLastDownload < pauseDuration) {
 		const remainingPause = pauseDuration - timeSinceLastDownload;
@@ -216,7 +216,7 @@ async function findMsvcTools() {
 
 		// Find Visual Studio installation path
 		const vsInstallResult =
-			await $`powershell -command "& '${vswherePath}' -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"`.quiet();
+			await $`pwsh -command "& '${vswherePath}' -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"`.quiet();
 		if (
 			vsInstallResult.exitCode !== 0 ||
 			!vsInstallResult.stdout.toString().trim()
@@ -283,7 +283,7 @@ async function installWindowsDeps() {
 	);
 	try {
 		// Run the PowerShell helper (it will request elevation if needed)
-		await $`powershell -ExecutionPolicy Bypass -NoProfile -File "${scriptPath}"`;
+		await $`pwsh -ExecutionPolicy Bypass -NoProfile -File "${scriptPath}"`;
 		console.log(
 			"Windows dependency installer finished. Re-checking dependencies...",
 		);
@@ -332,7 +332,7 @@ async function checkDependencies() {
 			if (existsSync(vswherePath)) {
 				// Use PowerShell wrapper to ensure output is captured correctly on Windows
 				const out =
-					await $`powershell -command "& '${vswherePath}' -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"`.quiet();
+					await $`pwsh -command "& '${vswherePath}' -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"`.quiet();
 				if (out.exitCode === 0 && out.stdout.toString().trim()) vsFound = true;
 			} else {
 				const out =
@@ -379,7 +379,7 @@ async function checkDependencies() {
 					if (existsSync(vswherePath)) {
 						// Use PowerShell wrapper to ensure output is captured correctly on Windows
 						out =
-							await $`powershell -command "& '${vswherePath}' -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"`.quiet();
+							await $`pwsh -command "& '${vswherePath}' -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"`.quiet();
 					} else {
 						out =
 							await $`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`.quiet();
@@ -639,29 +639,29 @@ async function copyToDist() {
 		const webview2Arch = "x64";
 		await $`cp vendors/webview2/Microsoft.Web.WebView2/build/native/${webview2Arch}/WebView2Loader.dll dist/WebView2Loader.dll`;
 		// CEF binaries for Windows - copy ALL CEF files to cef/ subdirectory for consistent organization
-		await $`powershell -command "New-Item -ItemType Directory -Path 'dist/cef' -Force | Out-Null"`;
+		await $`pwsh -command "New-Item -ItemType Directory -Path 'dist/cef' -Force | Out-Null"`;
 		// Copy main CEF DLLs to cef/ subdirectory
-		await $`powershell -command "if (Test-Path 'vendors/cef/Release/*.dll') { Copy-Item 'vendors/cef/Release/*.dll' 'dist/cef/' -Force }"`;
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Release/*.dll') { Copy-Item 'vendors/cef/Release/*.dll' 'dist/cef/' -Force }"`;
 
 		// Copy all available resource files to cef/ subdirectory from both Release and Resources directories
 		console.log("Copying CEF resource files...");
 
 		// Copy .pak files from Resources directory
-		await $`powershell -command "if (Test-Path 'vendors/cef/Resources/*.pak') { Write-Host 'Found .pak files in Resources, copying...'; Copy-Item 'vendors/cef/Resources/*.pak' 'dist/cef/' -Force } else { Write-Host 'No .pak files found in vendors/cef/Resources/' }"`;
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Resources/*.pak') { Write-Host 'Found .pak files in Resources, copying...'; Copy-Item 'vendors/cef/Resources/*.pak' 'dist/cef/' -Force } else { Write-Host 'No .pak files found in vendors/cef/Resources/' }"`;
 
 		// Copy resource files from Release directory
-		await $`powershell -command "if (Test-Path 'vendors/cef/Release/*.pak') { Write-Host 'Found .pak files in Release, copying...'; Copy-Item 'vendors/cef/Release/*.pak' 'dist/cef/' -Force }"`;
-		await $`powershell -command "if (Test-Path 'vendors/cef/Release/*.dat') { Copy-Item 'vendors/cef/Release/*.dat' 'dist/cef/' -Force }"`;
-		await $`powershell -command "if (Test-Path 'vendors/cef/Release/*.bin') { Copy-Item 'vendors/cef/Release/*.bin' 'dist/cef/' -Force }"`;
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Release/*.pak') { Write-Host 'Found .pak files in Release, copying...'; Copy-Item 'vendors/cef/Release/*.pak' 'dist/cef/' -Force }"`;
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Release/*.dat') { Copy-Item 'vendors/cef/Release/*.dat' 'dist/cef/' -Force }"`;
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Release/*.bin') { Copy-Item 'vendors/cef/Release/*.bin' 'dist/cef/' -Force }"`;
 
 		// Copy icudtl.dat directly to cef/ root (same folder as DLLs) - this is required for CEF initialization
-		await $`powershell -command "if (Test-Path 'vendors/cef/Resources/icudtl.dat') { Copy-Item 'vendors/cef/Resources/icudtl.dat' 'dist/cef/' -Force }"`.catch(
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Resources/icudtl.dat') { Copy-Item 'vendors/cef/Resources/icudtl.dat' 'dist/cef/' -Force }"`.catch(
 			() => {},
 		);
 
 		// CEF locales to cef/Resources/locales subdirectory
-		await $`powershell -command "if (-not (Test-Path 'dist/cef/Resources')) { New-Item -ItemType Directory -Path 'dist/cef/Resources' -Force | Out-Null }"`;
-		await $`powershell -command "if (Test-Path 'vendors/cef/Resources/locales') { Copy-Item 'vendors/cef/Resources/locales' 'dist/cef/Resources/' -Recurse -Force }"`.catch(
+		await $`pwsh -command "if (-not (Test-Path 'dist/cef/Resources')) { New-Item -ItemType Directory -Path 'dist/cef/Resources' -Force | Out-Null }"`;
+		await $`pwsh -command "if (Test-Path 'vendors/cef/Resources/locales') { Copy-Item 'vendors/cef/Resources/locales' 'dist/cef/Resources/' -Recurse -Force }"`.catch(
 			() => {},
 		);
 
@@ -756,7 +756,7 @@ async function createPlatformDistFolder() {
 	// Copy all files from dist/ to platform-specific folder
 	if (OS === "win") {
 		// On Windows use PowerShell to copy all files
-		await $`powershell -command "Copy-Item -Path 'dist\\*' -Destination '${platformDistDir}\\' -Recurse -Force"`;
+		await $`pwsh -command "Copy-Item -Path 'dist\\*' -Destination '${platformDistDir}\\' -Recurse -Force"`;
 	} else {
 		// On Unix systems - use rsync with delete to ensure clean copy
 		// The --delete flag removes files in destination that don't exist in source
@@ -870,7 +870,7 @@ async function vendorBun() {
 	// Extract zip file
 	if (isWindows) {
 		// Use PowerShell to extract zip on Windows
-		await $`powershell -command "Expand-Archive -Path ${tempZipPath} -DestinationPath ${extractDir} -Force"`;
+		await $`pwsh -command "Expand-Archive -Path ${tempZipPath} -DestinationPath ${extractDir} -Force"`;
 	} else {
 		// Use unzip on macOS/Linux
 		await $`unzip -o ${tempZipPath} -d ${extractDir}`;
@@ -1425,7 +1425,7 @@ async function vendorCEF() {
 			// Download Windows CEF binaries (minimal distribution)
 			const tempPath = join(process.cwd(), "vendors", "cef_temp.tar.bz2");
 			// Create vendors directory if needed
-			await $`powershell -command "if (-not (Test-Path vendors)) { New-Item -ItemType Directory -Path vendors | Out-Null }"`;
+			await $`pwsh -command "if (-not (Test-Path vendors)) { New-Item -ItemType Directory -Path vendors | Out-Null }"`;
 
 			// Download CEF - using URL encoding for the + character
 			console.log("Downloading CEF binaries...");
@@ -1439,8 +1439,8 @@ async function vendorCEF() {
 
 			// Extract using tar (Windows 10+ has built-in tar support)
 			console.log("Extracting CEF...");
-			await $`powershell -command "New-Item -ItemType Directory -Path 'vendors/cef_temp' -Force | Out-Null"`;
-			await $`powershell -command "New-Item -ItemType Directory -Path 'vendors/cef' -Force | Out-Null"`;
+			await $`pwsh -command "New-Item -ItemType Directory -Path 'vendors/cef_temp' -Force | Out-Null"`;
+			await $`pwsh -command "New-Item -ItemType Directory -Path 'vendors/cef' -Force | Out-Null"`;
 
 			// Extract tar.bz2 using Windows built-in tar
 			console.log("Extracting with tar (this may take a few minutes)...");
@@ -1473,17 +1473,17 @@ async function vendorCEF() {
 
 			if (existsSync(extractedPath)) {
 				// Use PowerShell Copy-Item for reliable directory copying
-				await $`powershell -command "Copy-Item -Path '${extractedPath}\\*' -Destination 'vendors\\cef' -Recurse -Force"`;
+				await $`pwsh -command "Copy-Item -Path '${extractedPath}\\*' -Destination 'vendors\\cef' -Recurse -Force"`;
 			} else {
 				// If it's not a directory, the files might be directly in cef_temp
-				await $`powershell -command "Copy-Item -Path 'vendors\\cef_temp\\*' -Destination 'vendors\\cef' -Recurse -Force"`;
+				await $`pwsh -command "Copy-Item -Path 'vendors\\cef_temp\\*' -Destination 'vendors\\cef' -Recurse -Force"`;
 			}
 
 			// Clean up temp directory
-			await $`powershell -command "Remove-Item 'vendors/cef_temp' -Recurse -Force"`;
+			await $`pwsh -command "Remove-Item 'vendors/cef_temp' -Recurse -Force"`;
 
 			// Clean up temp file
-			await $`powershell -command "Remove-Item '${tempPath}' -Force"`;
+			await $`pwsh -command "Remove-Item '${tempPath}' -Force"`;
 
 			// Verify extraction worked
 			const cefCMakeFile = join(

@@ -6079,6 +6079,19 @@ static std::shared_ptr<WebView2View> createWebView2View(uint32_t webviewId,
                             // Make sure the controller is visible
                             ctrl->put_IsVisible(TRUE);
 
+                            // Enable native Win32 non-client region support (Aero Snap, drag-from-max,
+                            // double-click-to-max, system menu). Requires WebView2 Runtime >= Edge 120
+                            // (SDK 1.0.2420.47). Silently no-ops on older runtimes via QueryInterface.
+                            {
+                                ComPtr<ICoreWebView2Settings> settings;
+                                if (SUCCEEDED(webview->get_Settings(&settings)) && settings) {
+                                    ComPtr<ICoreWebView2Settings9> settings9;
+                                    if (SUCCEEDED(settings->QueryInterface(IID_PPV_ARGS(&settings9))) && settings9) {
+                                        settings9->put_IsNonClientRegionSupportEnabled(TRUE);
+                                    }
+                                }
+                            }
+
                             // Set transparent background if requested
                             if (transparent) {
                                 ComPtr<ICoreWebView2Controller2> ctrl2;
@@ -9212,7 +9225,10 @@ ELECTROBUN_EXPORT HWND createWindowWithFrameAndStyleFromWorker(
             // We use WS_CAPTION | WS_THICKFRAME so the system treats it as a
             // standard framed window (giving us shadow and border resizing),
             // then remove the caption bar area in WM_NCCALCSIZE.
-            windowStyle = WS_VISIBLE | WS_CAPTION | WS_THICKFRAME | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+            // WS_MAXIMIZEBOX/MINIMIZEBOX/SYSMENU are required for DefWindowProc to
+            // honor double-click-to-maximize on HTCAPTION and the system menu.
+            windowStyle = WS_VISIBLE | WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX |
+                          WS_MINIMIZEBOX | WS_SYSMENU | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
             data->chromeStyle = ChromeStyle::HiddenInset;
         }
         // else: default titleBarStyle = WS_OVERLAPPEDWINDOW (standard window)

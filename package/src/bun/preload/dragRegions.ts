@@ -26,7 +26,27 @@ function isAppRegionDrag(e: MouseEvent): boolean {
 	return !!(draggableByStyle || draggableByClass);
 }
 
+function injectDragRegionStyles() {
+	const css =
+		".electrobun-webkit-app-region-drag{app-region:drag;-webkit-app-region:drag;}" +
+		".electrobun-webkit-app-region-no-drag{app-region:no-drag;-webkit-app-region:no-drag;}";
+	const apply = () => {
+		if (document.getElementById("electrobun-drag-region-styles")) return;
+		const style = document.createElement("style");
+		style.id = "electrobun-drag-region-styles";
+		style.textContent = css;
+		(document.head || document.documentElement).appendChild(style);
+	};
+	if (document.head || document.documentElement) {
+		apply();
+	} else {
+		document.addEventListener("DOMContentLoaded", apply, { once: true });
+	}
+}
+
 export function initDragRegions() {
+	injectDragRegionStyles();
+
 	document.addEventListener("mousedown", (e) => {
 		if (isAppRegionDrag(e)) {
 			send("startWindowMove", { id: window.__electrobunWindowId });
